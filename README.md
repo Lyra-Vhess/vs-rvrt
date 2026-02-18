@@ -43,7 +43,7 @@ mkdir ../vsrvrt-pkgbuild
 cp PKGBUILD ../vsrvrt-pkgbuild/
 
 # Build and install
-cd ../vsrvrt-pkgbuild
+mv ../vsrvrt-pkgbuild
 makepkg -si
 ```
 
