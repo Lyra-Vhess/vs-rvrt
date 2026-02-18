@@ -31,6 +31,7 @@ dependencies = [
     "tqdm",
     "einops",
     "vapoursynth>=60",
+    "packaging",
 ]
 
 [project.optional-dependencies]
