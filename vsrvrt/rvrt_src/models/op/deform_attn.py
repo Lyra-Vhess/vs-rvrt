@@ -99,61 +99,180 @@ def _find_ninja():
     return None, None
 
 
+def _find_cuda_home():
+    """Find CUDA installation directory on various platforms.
+
+    Searches for CUDA installation in common locations, prioritizing
+    the version that matches PyTorch's compiled CUDA version.
+
+    Returns:
+        str or None: Path to CUDA installation directory, or None if not found
+    """
+    import sys
+    import glob
+
+    # Helper function to validate CUDA home by checking for nvcc
+    def _validate_cuda_home(path):
+        if not path or not os.path.exists(path):
+            return False
+        nvcc_name = "nvcc.exe" if os.name == "nt" else "nvcc"
+        nvcc_path = os.path.join(path, "bin", nvcc_name)
+        return os.path.exists(nvcc_path)
+
+    # 1. Check environment variables first
+    cuda_home = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
+    if cuda_home and _validate_cuda_home(cuda_home):
+        return cuda_home
+
+    # 2. Check torch's internal CUDA_HOME (but validate it!)
+    try:
+        from torch.utils.cpp_extension import CUDA_HOME as torch_cuda_home
+
+        if torch_cuda_home and _validate_cuda_home(torch_cuda_home):
+            return torch_cuda_home
+    except (ImportError, AttributeError):
+        pass
+
+    # 3. Try to find nvcc in PATH and infer CUDA_HOME
+    try:
+        cmd = "where" if os.name == "nt" else "which"
+        result = subprocess.run([cmd, "nvcc"], capture_output=True, text=True)
+        if result.returncode == 0:
+            nvcc_path = result.stdout.strip().split("\n")[0].strip()
+            # nvcc is typically in CUDA_HOME/bin/nvcc
+            cuda_home = os.path.dirname(os.path.dirname(nvcc_path))
+            if _validate_cuda_home(cuda_home):
+                return cuda_home
+    except (subprocess.SubprocessError, OSError):
+        pass
+
+    # 4. Platform-specific searches
+    pytorch_cuda_version = None
+    if torch.cuda.is_available():
+        pytorch_cuda_version = torch.version.cuda
+
+    if sys.platform == "win32":
+        # Windows: Search standard NVIDIA CUDA installation paths
+        base_paths = [
+            os.environ.get("ProgramFiles", "C:\\Program Files"),
+            os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"),
+        ]
+
+        cuda_base_dirs = []
+        for base in base_paths:
+            nvidia_path = os.path.join(base, "NVIDIA GPU Computing Toolkit", "CUDA")
+            if os.path.exists(nvidia_path):
+                cuda_base_dirs.append(nvidia_path)
+
+        # Find all CUDA version directories
+        cuda_versions = []
+        for cuda_base in cuda_base_dirs:
+            for entry in os.listdir(cuda_base):
+                version_dir = os.path.join(cuda_base, entry)
+                nvcc_path = os.path.join(version_dir, "bin", "nvcc.exe")
+                if os.path.isdir(version_dir) and os.path.exists(nvcc_path):
+                    cuda_versions.append((entry, version_dir))
+
+        # Sort by version (newest first)
+        def version_key(item):
+            try:
+                return tuple(map(int, item[0].lstrip("v").split(".")))
+            except ValueError:
+                return (0, 0)
+
+        cuda_versions.sort(key=version_key, reverse=True)
+
+        # Prefer version matching PyTorch's CUDA version
+        if pytorch_cuda_version and cuda_versions:
+            for version_name, cuda_path in cuda_versions:
+                # Check if version matches (e.g., "v12.1" matches "12.1")
+                if pytorch_cuda_version in version_name:
+                    return cuda_path
+
+        # Return newest version if no match
+        if cuda_versions:
+            return cuda_versions[0][1]
+
+    else:
+        # Linux/macOS: Check common paths
+        common_paths = [
+            "/usr/local/cuda",
+            "/opt/cuda",
+            "/usr/local/cuda-{}".format(pytorch_cuda_version)
+            if pytorch_cuda_version
+            else None,
+        ]
+
+        # Also check for versioned installations
+        for base in ["/usr/local", "/opt"]:
+            if os.path.exists(base):
+                for entry in os.listdir(base):
+                    if entry.startswith("cuda"):
+                        common_paths.append(os.path.join(base, entry))
+
+        for path in common_paths:
+            if path and os.path.exists(path):
+                nvcc_name = "nvcc.exe" if os.name == "nt" else "nvcc"
+                nvcc_path = os.path.join(path, "bin", nvcc_name)
+                if os.path.exists(nvcc_path):
+                    return path
+
+    return None
+
+
 def _check_cuda_requirements():
     """Check if CUDA requirements are met for compiling the extension.
 
     Returns:
-        tuple: (is_available: bool, error_message: str or None, ninja_path: str or None, ninja_dir: str or None)
+        tuple: (is_available: bool, error_message: str or None, cuda_home: str or None, ninja_path: str or None, ninja_dir: str or None)
     """
     if not torch.cuda.is_available():
-        return False, "CUDA is not available. This plugin requires CUDA.", None, None
-
-    # Check for CUDA_HOME
-    cuda_home = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
-    if not cuda_home:
-        # Try to infer from torch
-        try:
-            from torch.utils.cpp_extension import CUDA_HOME
-
-            cuda_home = CUDA_HOME
-        except:
-            pass
-
-    if not cuda_home or not os.path.exists(cuda_home):
         return (
             False,
-            (
-                "CUDA_HOME not found. Please set CUDA_HOME environment variable to your CUDA installation path.\n"
-                "Example: export CUDA_HOME=/usr/local/cuda or export CUDA_HOME=/opt/cuda"
-            ),
+            "CUDA is not available. This plugin requires CUDA.",
+            None,
             None,
             None,
         )
 
-    # Check for nvcc
-    nvcc_path = os.path.join(cuda_home, "bin", "nvcc")
+    # Find CUDA installation
+    cuda_home = _find_cuda_home()
+
+    if not cuda_home:
+        pytorch_cuda = torch.version.cuda if torch.cuda.is_available() else "unknown"
+        return (
+            False,
+            (
+                "CUDA installation not found.\n\n"
+                "Searched locations:\n"
+                "  - CUDA_HOME / CUDA_PATH environment variables\n"
+                "  - PyTorch's internal CUDA_HOME\n"
+                "  - nvcc in PATH\n"
+                "  - Standard CUDA installation directories\n\n"
+                f"PyTorch was built with CUDA {pytorch_cuda}.\n\n"
+                "Please install CUDA toolkit or set CUDA_HOME:\n"
+                "  Windows: set CUDA_HOME=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.x\n"
+                "  Linux: export CUDA_HOME=/usr/local/cuda or /opt/cuda"
+            ),
+            None,
+            None,
+            None,
+        )
+
+    # Verify nvcc exists
+    nvcc_name = "nvcc.exe" if os.name == "nt" else "nvcc"
+    nvcc_path = os.path.join(cuda_home, "bin", nvcc_name)
     if not os.path.exists(nvcc_path):
-        # Try to find nvcc in PATH (Windows uses 'where', Linux/Mac use 'which')
-        try:
-            cmd = "where" if os.name == "nt" else "which"
-            result = subprocess.run([cmd, "nvcc"], capture_output=True, text=True)
-            if result.returncode != 0:
-                return (
-                    False,
-                    (
-                        f"nvcc not found at {nvcc_path} and not in PATH.\n"
-                        f"Please ensure CUDA toolkit is properly installed."
-                    ),
-                    None,
-                    None,
-                )
-        except:
-            return (
-                False,
-                f"nvcc not found. Please ensure CUDA toolkit is properly installed.",
-                None,
-                None,
-            )
+        return (
+            False,
+            (
+                f"CUDA found at {cuda_home} but nvcc not found at {nvcc_path}.\n"
+                f"Your CUDA installation may be incomplete."
+            ),
+            None,
+            None,
+            None,
+        )
 
     # Check for ninja
     ninja_path, ninja_dir = _find_ninja()
@@ -172,11 +291,12 @@ def _check_cuda_requirements():
                 "  Or set NINJA_PATH environment variable:\n"
                 "    set NINJA_PATH=C:\\path\\to\\ninja.exe"
             ),
+            cuda_home,
             None,
             None,
         )
 
-    return True, None, ninja_path, ninja_dir
+    return True, None, cuda_home, ninja_path, ninja_dir
 
 
 def _load_deform_attn_extension():
@@ -184,7 +304,9 @@ def _load_deform_attn_extension():
 
     The extension is compiled on first use and cached for subsequent runs.
     """
-    is_available, error_msg, ninja_path, ninja_dir = _check_cuda_requirements()
+    is_available, error_msg, cuda_home, ninja_path, ninja_dir = (
+        _check_cuda_requirements()
+    )
 
     if not is_available:
         raise RuntimeError(
@@ -193,12 +315,30 @@ def _load_deform_attn_extension():
             "1. NVIDIA GPU with CUDA support\n"
             "2. CUDA toolkit installed\n"
             "3. ninja build system installed\n"
-            "4. C++ compiler (gcc/clang)\n\n"
+            "4. C++ compiler (gcc/clang / MSVC)\n\n"
             "Environment setup:\n"
-            "  export CUDA_HOME=/path/to/cuda  # e.g., /usr/local/cuda or /opt/cuda\n"
-            '  export PATH="$CUDA_HOME/bin:$PATH"\n'
-            '  export LD_LIBRARY_PATH="$CUDA_HOME/lib64:$LD_LIBRARY_PATH"'
+            "  Windows:\n"
+            "    set CUDA_HOME=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.x\n"
+            "    set PATH=%CUDA_HOME%\\bin;%PATH%\n"
+            "  Linux:\n"
+            "    export CUDA_HOME=/usr/local/cuda\n"
+            "    export PATH=$CUDA_HOME/bin:$PATH\n"
+            "    export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH"
         )
+
+    # At this point, cuda_home should always be set since is_available is True
+    assert cuda_home is not None, (
+        "cuda_home should not be None when is_available is True"
+    )
+
+    # Set CUDA_HOME if auto-detected and not already set
+    if not os.environ.get("CUDA_HOME"):
+        os.environ["CUDA_HOME"] = cuda_home
+
+    # Add CUDA bin to PATH if not already there
+    cuda_bin = os.path.join(cuda_home, "bin")
+    if cuda_bin not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = cuda_bin + os.pathsep + os.environ.get("PATH", "")
 
     # Add ninja to PATH if found outside of PATH (e.g., Windows portable Python)
     if ninja_dir and ninja_dir not in os.environ.get("PATH", ""):
@@ -226,11 +366,14 @@ def _load_deform_attn_extension():
         raise RuntimeError(
             f"Failed to compile deform_attn extension: {e}\n\n"
             "Common solutions:\n"
-            "1. Ensure CUDA_HOME is set correctly\n"
+            "1. Ensure CUDA toolkit is installed\n"
             "2. Install ninja: pip install ninja\n"
-            "3. Install C++ compiler: sudo apt-get install build-essential (Ubuntu) or sudo pacman -S base-devel (Arch)\n"
+            "3. Install C++ compiler:\n"
+            "   - Windows: Visual Studio Build Tools with C++ workload\n"
+            "   - Ubuntu: sudo apt-get install build-essential\n"
+            "   - Arch: sudo pacman -S base-devel\n"
             "4. Check that your CUDA version matches PyTorch's CUDA version\n\n"
-            f"Current CUDA_HOME: {os.environ.get('CUDA_HOME', 'Not set')}\n"
+            f"Detected CUDA_HOME: {cuda_home}\n"
             f"PyTorch CUDA version: {torch.version.cuda}"
         ) from e
 
