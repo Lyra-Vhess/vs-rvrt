@@ -14,6 +14,7 @@ depends=(
     'python-requests'
     'python-tqdm'
     'vapoursynth'
+    'python-packaging'
 )
 optdepends=(
     'cuda: For GPU acceleration'
