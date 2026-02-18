@@ -50,6 +50,11 @@ makepkg -si
 
 ### pip
 ```bash
+# Clone the repository
+git clone https://github.com/Lyra-Vhess/vs-rvrt/
+cd vs-rvrt
+
+# Install
 pip install -e .
 ```
 
