@@ -26,7 +26,7 @@ Usage:
     upscaled = vsrvrt.SuperRes(clip, scale=4, model="reds")
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 __author__ = "RVRT Vapoursynth Plugin"
 
 from .rvrt_filter import Denoise, Deblur, SuperRes, estimate_requirements
