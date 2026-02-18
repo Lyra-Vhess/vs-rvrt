@@ -40,10 +40,10 @@ wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/006_RVRT_vid
 
 # Create PKGBUILD directory
 mkdir ../vsrvrt-pkgbuild
-cp PKGBUILD ../vsrvrt-pkgbuild/
+mv PKGBUILD ../vsrvrt-pkgbuild/
 
 # Build and install
-mv ../vsrvrt-pkgbuild
+cd ../vsrvrt-pkgbuild
 makepkg -si
 ```
 
