@@ -6,6 +6,8 @@
 
 import math
 import os
+import subprocess
+import warnings
 import torch
 from torch import nn as nn
 from torch.autograd import Function
@@ -22,22 +24,218 @@ module_path = os.path.dirname(__file__)
 _extra_cflags = ["-DGLOG_EXPORT=", "-DGLOG_NO_EXPORT=", "-DGLOG_DEPRECATED="]
 _extra_cuda_cflags = ["-DGLOG_EXPORT=", "-DGLOG_NO_EXPORT=", "-DGLOG_DEPRECATED="]
 
-deform_attn_ext = load(
-    "deform_attn",
-    sources=[
-        os.path.join(module_path, "deform_attn_ext.cpp"),
-        os.path.join(
-            module_path,
-            "deform_attn_cuda_pt110.cpp"
-            if Version(torch.__version__) >= Version("1.10.0")
-            else "deform_attn_cuda_pt109.cpp",
-        ),
-        os.path.join(module_path, "deform_attn_cuda_kernel.cu"),
-    ],
-    extra_cflags=_extra_cflags,
-    extra_cuda_cflags=_extra_cuda_cflags,
-    verbose=False,
-)
+
+def _find_ninja():
+    """Find ninja executable in common locations.
+
+    On Windows portable Python setups, ninja may be installed in the Scripts
+    folder but not in PATH. This function searches common locations.
+
+    Returns:
+        tuple: (ninja_path: str or None, ninja_dir: str or None)
+               ninja_path is full path to executable, ninja_dir is directory containing it
+    """
+    import sys
+
+    # Check NINJA_PATH environment variable first
+    env_ninja = os.environ.get("NINJA_PATH")
+    if env_ninja and os.path.isfile(env_ninja):
+        return env_ninja, os.path.dirname(env_ninja)
+
+    # First check if ninja is in PATH
+    try:
+        if sys.platform == "win32":
+            result = subprocess.run(
+                ["ninja", "--version"], capture_output=True, text=True, shell=False
+            )
+        else:
+            result = subprocess.run(
+                ["ninja", "--version"], capture_output=True, text=True
+            )
+        if result.returncode == 0:
+            return "ninja", None  # In PATH, use as-is
+    except (FileNotFoundError, subprocess.SubprocessError, OSError):
+        pass
+
+    # On Windows, search in common portable Python locations
+    if sys.platform == "win32":
+        import sys
+
+        python_exe = sys.executable
+        python_dir = os.path.dirname(python_exe)
+
+        possible_paths = [
+            # User-specified NINJA_PATH
+            os.environ.get("NINJA_PATH"),
+            # Python Scripts folder (most common pip install location)
+            os.path.join(python_dir, "Scripts", "ninja.exe"),
+            # Same directory as python.exe
+            os.path.join(python_dir, "ninja.exe"),
+            # Parent directory Scripts (VapourSynth portable structure)
+            os.path.join(os.path.dirname(python_dir), "Scripts", "ninja.exe"),
+            os.path.join(os.path.dirname(python_dir), "ninja.exe"),
+            # Site-packages ninja package
+            os.path.join(
+                python_dir, "Lib", "site-packages", "ninja", "data", "bin", "ninja.exe"
+            ),
+        ]
+
+        # Also check all paths in sys.path for site-packages
+        for site_path in sys.path:
+            if "site-packages" in site_path:
+                possible_paths.extend(
+                    [
+                        os.path.join(site_path, "ninja", "data", "bin", "ninja.exe"),
+                        os.path.join(
+                            os.path.dirname(site_path), "Scripts", "ninja.exe"
+                        ),
+                    ]
+                )
+
+        for ninja_path in possible_paths:
+            if ninja_path and os.path.isfile(ninja_path):
+                return ninja_path, os.path.dirname(ninja_path)
+
+    return None, None
+
+
+def _check_cuda_requirements():
+    """Check if CUDA requirements are met for compiling the extension.
+
+    Returns:
+        tuple: (is_available: bool, error_message: str or None, ninja_path: str or None, ninja_dir: str or None)
+    """
+    if not torch.cuda.is_available():
+        return False, "CUDA is not available. This plugin requires CUDA.", None, None
+
+    # Check for CUDA_HOME
+    cuda_home = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
+    if not cuda_home:
+        # Try to infer from torch
+        try:
+            from torch.utils.cpp_extension import CUDA_HOME
+
+            cuda_home = CUDA_HOME
+        except:
+            pass
+
+    if not cuda_home or not os.path.exists(cuda_home):
+        return (
+            False,
+            (
+                "CUDA_HOME not found. Please set CUDA_HOME environment variable to your CUDA installation path.\n"
+                "Example: export CUDA_HOME=/usr/local/cuda or export CUDA_HOME=/opt/cuda"
+            ),
+            None,
+            None,
+        )
+
+    # Check for nvcc
+    nvcc_path = os.path.join(cuda_home, "bin", "nvcc")
+    if not os.path.exists(nvcc_path):
+        # Try to find nvcc in PATH (Windows uses 'where', Linux/Mac use 'which')
+        try:
+            cmd = "where" if os.name == "nt" else "which"
+            result = subprocess.run([cmd, "nvcc"], capture_output=True, text=True)
+            if result.returncode != 0:
+                return (
+                    False,
+                    (
+                        f"nvcc not found at {nvcc_path} and not in PATH.\n"
+                        f"Please ensure CUDA toolkit is properly installed."
+                    ),
+                    None,
+                    None,
+                )
+        except:
+            return (
+                False,
+                f"nvcc not found. Please ensure CUDA toolkit is properly installed.",
+                None,
+                None,
+            )
+
+    # Check for ninja
+    ninja_path, ninja_dir = _find_ninja()
+    if ninja_path is None:
+        return (
+            False,
+            (
+                "ninja build system not found. Please install ninja.\n"
+                "On Ubuntu/Debian: sudo apt-get install ninja-build\n"
+                "On Arch: sudo pacman -S ninja\n"
+                "On Windows: pip install ninja\n"
+                "\n"
+                "If you already installed ninja but get this error:\n"
+                "  Windows portable Python: Add the Scripts folder to your PATH:\n"
+                "    set PATH=%%PATH%%;C:\\path\\to\\python\\Scripts\n"
+                "  Or set NINJA_PATH environment variable:\n"
+                "    set NINJA_PATH=C:\\path\\to\\ninja.exe"
+            ),
+            None,
+            None,
+        )
+
+    return True, None, ninja_path, ninja_dir
+
+
+def _load_deform_attn_extension():
+    """Load or compile the deform_attn CUDA extension.
+
+    The extension is compiled on first use and cached for subsequent runs.
+    """
+    is_available, error_msg, ninja_path, ninja_dir = _check_cuda_requirements()
+
+    if not is_available:
+        raise RuntimeError(
+            f"Cannot load deform_attn extension: {error_msg}\n\n"
+            "To use this plugin, you need:\n"
+            "1. NVIDIA GPU with CUDA support\n"
+            "2. CUDA toolkit installed\n"
+            "3. ninja build system installed\n"
+            "4. C++ compiler (gcc/clang)\n\n"
+            "Environment setup:\n"
+            "  export CUDA_HOME=/path/to/cuda  # e.g., /usr/local/cuda or /opt/cuda\n"
+            '  export PATH="$CUDA_HOME/bin:$PATH"\n'
+            '  export LD_LIBRARY_PATH="$CUDA_HOME/lib64:$LD_LIBRARY_PATH"'
+        )
+
+    # Add ninja to PATH if found outside of PATH (e.g., Windows portable Python)
+    if ninja_dir and ninja_dir not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = ninja_dir + os.pathsep + os.environ.get("PATH", "")
+
+    try:
+        ext = load(
+            "deform_attn",
+            sources=[
+                os.path.join(module_path, "deform_attn_ext.cpp"),
+                os.path.join(
+                    module_path,
+                    "deform_attn_cuda_pt110.cpp"
+                    if Version(torch.__version__) >= Version("1.10.0")
+                    else "deform_attn_cuda_pt109.cpp",
+                ),
+                os.path.join(module_path, "deform_attn_cuda_kernel.cu"),
+            ],
+            extra_cflags=_extra_cflags,
+            extra_cuda_cflags=_extra_cuda_cflags,
+            verbose=False,
+        )
+        return ext
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to compile deform_attn extension: {e}\n\n"
+            "Common solutions:\n"
+            "1. Ensure CUDA_HOME is set correctly\n"
+            "2. Install ninja: pip install ninja\n"
+            "3. Install C++ compiler: sudo apt-get install build-essential (Ubuntu) or sudo pacman -S base-devel (Arch)\n"
+            "4. Check that your CUDA version matches PyTorch's CUDA version\n\n"
+            f"Current CUDA_HOME: {os.environ.get('CUDA_HOME', 'Not set')}\n"
+            f"PyTorch CUDA version: {torch.version.cuda}"
+        ) from e
+
+
+deform_attn_ext = _load_deform_attn_extension()
 
 
 class Mlp(nn.Module):
