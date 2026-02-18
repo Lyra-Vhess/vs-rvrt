@@ -1,4 +1,4 @@
-# Maintainer: Your Name <your.email@example.com>
+# Maintainer: lyra_vhess on discord
 pkgname=vsrvrt
 pkgver=1.0.0
 pkgrel=1
@@ -21,18 +21,20 @@ optdepends=(
 )
 makedepends=('python-setuptools' 'python-wheel')
 
+_sourcedir="../vs-rvrt"
+
 source=()
 md5sums=()
 
 build() {
     # Work directly from the source directory
-    cd ../vsrvrt
+    cd "$startdir/$_sourcedir"
     python setup.py build
 }
 
 package() {
     # Work directly from the source directory
-    cd ../vsrvrt
+    cd "$startdir/$_sourcedir"
     python setup.py install --root="$pkgdir" --optimize=1
     
     # Install license
