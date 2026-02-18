@@ -12,7 +12,7 @@ import torch.nn as nn
 import torchvision
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
-from distutils.version import LooseVersion
+from packaging.version import Version
 import numpy as np
 from functools import reduce, lru_cache
 from operator import mul
@@ -960,7 +960,7 @@ class Upsample(nn.Sequential):
     """
 
     def __init__(self, scale, num_feat):
-        assert LooseVersion(torch.__version__) >= LooseVersion("1.8.1"), (
+        assert Version(torch.__version__) >= Version("1.8.1"), (
             "PyTorch version >= 1.8.1 to support 5D PixelShuffle."
         )
 
