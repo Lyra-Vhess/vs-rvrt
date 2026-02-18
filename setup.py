@@ -36,6 +36,16 @@ setup(
         "Programming Language :: Python :: 3.12",
     ],
     python_requires=">=3.8",
+    install_requires=[
+        "torch>=1.9.1",
+        "torchvision",
+        "numpy",
+        "requests",
+        "tqdm",
+        "einops",
+        "vapoursynth>=60",
+        "packaging",
+    ],
     include_package_data=True,
     zip_safe=False,
 )
