@@ -12,7 +12,7 @@ from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 from torch.nn import functional as F
 from einops.layers.torch import Rearrange
-from distutils.version import LooseVersion
+from packaging.version import Version
 from torch.utils.cpp_extension import load
 
 module_path = os.path.dirname(__file__)
@@ -29,7 +29,7 @@ deform_attn_ext = load(
         os.path.join(
             module_path,
             "deform_attn_cuda_pt110.cpp"
-            if LooseVersion(torch.__version__) >= LooseVersion("1.10.0")
+            if Version(torch.__version__) >= Version("1.10.0")
             else "deform_attn_cuda_pt109.cpp",
         ),
         os.path.join(module_path, "deform_attn_cuda_kernel.cu"),
