@@ -30,7 +30,7 @@ git clone https://github.com/Lyra-Vhess/vs-rvrt/
 cd vs-rvrt
 
 # Download models from releases
-mkdir vsrvrt/models
+mkdir vsrvrt/models && cd vsrvrt/models
 wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/001_RVRT_videosr_bi_REDS_30frames.pth \
 wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/002_RVRT_videosr_bi_Vimeo_14frames.pth \
 wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/003_RVRT_videosr_bd_Vimeo_14frames.pth \
@@ -39,6 +39,7 @@ wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/005_RVRT_vid
 wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/006_RVRT_videodenoising_DAVIS_16frames.pth
 
 # Create PKGBUILD directory
+cd ../..
 mkdir ../vsrvrt-pkgbuild
 mv PKGBUILD ../vsrvrt-pkgbuild/
 
