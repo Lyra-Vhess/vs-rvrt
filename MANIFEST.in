@@ -1,0 +1,4 @@
+# Include all files in rvrt_src package
+global-include *.cpp
+global-include *.cu
+global-include *.pth
