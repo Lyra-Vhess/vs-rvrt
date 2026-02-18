@@ -25,12 +25,31 @@ A Vapoursynth plugin wrapper for RVRT (Recurrent Video Restoration Transformer),
 ### Arch Linux
 
 ```bash
-# Coming Soon
+# Clone the repository
+git clone https://github.com/Lyra-Vhess/vs-rvrt/
+cd vs-rvrt
+
+# Download models from releases
+mkdir vsrvrt/models
+wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/001_RVRT_videosr_bi_REDS_30frames.pth \
+wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/002_RVRT_videosr_bi_Vimeo_14frames.pth \
+wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/003_RVRT_videosr_bd_Vimeo_14frames.pth \
+wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/004_RVRT_videodeblurring_DVD_16frames.pth \
+wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/005_RVRT_videodeblurring_GoPro_16frames.pth \
+wget https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/006_RVRT_videodenoising_DAVIS_16frames.pth
+
+# Create PKGBUILD directory
+mkdir ../vsrvrt-pkgbuild
+cp PKGBUILD ../vsrvrt-pkgbuild/
+
+# Build and install
+cd ../vsrvrt-pkgbuild
+makepkg -si
 ```
 
 ### pip
 ```bash
-# Coming Soon
+pip install -e .
 ```
 
 ### Environment Setup
