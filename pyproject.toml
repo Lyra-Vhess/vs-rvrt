@@ -9,7 +9,7 @@ description = "Vapoursynth plugin for RVRT (Recurrent Video Restoration Transfor
 readme = "README.md"
 license = "CC-BY-NC-4.0"
 authors = [
-    {name = "RVRT Vapoursynth Plugin"}
+    {name = "Lyra Vhess", email = "auxilliary.email@protonmail.com"}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -42,9 +42,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/JingyunLiang/RVRT"
-Repository = "https://github.com/JingyunLiang/RVRT"
-Documentation = "https://github.com/JingyunLiang/RVRT"
+Homepage = "https://github.com/Lyra-Vhess/vs-rvrt"
+Repository = "https://github.com/Lyra-Vhess/vs-rvrt"
+Documentation = "https://github.com/Lyra-Vhess/vs-rvrt"
 
 [project.entry-points."vapoursynth.plugins"]
 vsrvrt = "vsrvrt:register_plugin"

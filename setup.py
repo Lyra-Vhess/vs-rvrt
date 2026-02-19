@@ -14,11 +14,12 @@ else:
 setup(
     name="vsrvrt",
     version="1.0.0",
-    author="RVRT Vapoursynth Plugin",
+    author="Lyra Vhess",
+    author_email="auxilliary.email@protonmail.com",
     description="Vapoursynth plugin for RVRT video restoration",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/JingyunLiang/RVRT",
+    url="https://github.com/Lyra-Vhess/vs-rvrt",
     packages=find_packages(),
     package_data={
         "vsrvrt": ["models/*.pth"],

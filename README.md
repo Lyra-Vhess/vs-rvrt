@@ -22,16 +22,19 @@ A Vapoursynth plugin wrapper for RVRT (Recurrent Video Restoration Transformer),
 
 ## Installation
 
-### Arch Linux
+### PyPI
 
 ```bash
-git clone https://github.com/Lyra-Vhess/vs-rvrt/
-cd vs-rvrt
-mkdir ../vsrvrt-pkgbuild && mv PKGBUILD ../vsrvrt-pkgbuild/
-cd ../vsrvrt-pkgbuild && makepkg -si
+pip install vsrvrt
 ```
 
-### pip
+### Arch Linux (AUR)
+
+```bash
+yay -S vsrvrt-git
+```
+
+### From Source
 
 ```bash
 git clone https://github.com/Lyra-Vhess/vs-rvrt/
