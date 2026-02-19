@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vsrvrt"
-version = "1.0.0"
+version = "1.0.1"
 description = "Vapoursynth plugin for RVRT (Recurrent Video Restoration Transformer)"
 readme = "README.md"
 license = "CC-BY-NC-4.0"
