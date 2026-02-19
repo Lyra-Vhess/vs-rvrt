@@ -22,6 +22,7 @@ setup(
     url="https://github.com/Lyra-Vhess/vs-rvrt",
     packages=find_packages(),
     package_data={
+        "vsrvrt": ["models/*.pth"],
         "vsrvrt.rvrt_src.models.op": ["*.cpp", "*.cu"],
     },
     classifiers=[

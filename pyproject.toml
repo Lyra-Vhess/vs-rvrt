@@ -54,7 +54,7 @@ where = ["."]
 include = ["vsrvrt*"]
 
 [tool.setuptools.package-data]
-vsrvrt = ["rvrt_src/models/op/*.cpp", "rvrt_src/models/op/*.cu"]
+vsrvrt = ["models/*.pth", "rvrt_src/models/op/*.cpp", "rvrt_src/models/op/*.cu"]
 
 [tool.setuptools_scm]
 write_to = "vsrvrt/_version.py"
