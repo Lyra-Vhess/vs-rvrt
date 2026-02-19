@@ -1,4 +1,3 @@
-# Include all files in rvrt_src package
+# Include CUDA source files for compilation
 global-include *.cpp
 global-include *.cu
-global-include *.pth
