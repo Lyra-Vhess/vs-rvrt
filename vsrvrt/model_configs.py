@@ -50,7 +50,7 @@ TASK_CONFIGS = {
         attention_window=[3, 3],
         cpu_cache_length=128,
         nonblind_denoising=False,
-        model_url="https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/001_RVRT_videosr_bi_REDS_30frames.pth",
+        model_url="https://github.com/JingyunLiang/RVRT/releases/download/v0.0/001_RVRT_videosr_bi_REDS_30frames.pth",
         description="Video Super-Resolution (BI) trained on REDS, 4x upscale",
     ),
     "002_RVRT_videosr_bi_Vimeo_14frames": RVRTConfig(
@@ -69,7 +69,7 @@ TASK_CONFIGS = {
         attention_window=[3, 3],
         cpu_cache_length=128,
         nonblind_denoising=False,
-        model_url="https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/002_RVRT_videosr_bi_Vimeo_14frames.pth",
+        model_url="https://github.com/JingyunLiang/RVRT/releases/download/v0.0/002_RVRT_videosr_bi_Vimeo_14frames.pth",
         description="Video Super-Resolution (BI) trained on Vimeo, 4x upscale",
     ),
     "003_RVRT_videosr_bd_Vimeo_14frames": RVRTConfig(
@@ -88,7 +88,7 @@ TASK_CONFIGS = {
         attention_window=[3, 3],
         cpu_cache_length=128,
         nonblind_denoising=False,
-        model_url="https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/003_RVRT_videosr_bd_Vimeo_14frames.pth",
+        model_url="https://github.com/JingyunLiang/RVRT/releases/download/v0.0/003_RVRT_videosr_bd_Vimeo_14frames.pth",
         description="Video Super-Resolution (BD) trained on Vimeo, 4x upscale",
     ),
     # Video Deblurring tasks
@@ -108,7 +108,7 @@ TASK_CONFIGS = {
         attention_window=[3, 3],
         cpu_cache_length=128,
         nonblind_denoising=False,
-        model_url="https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/004_RVRT_videodeblurring_DVD_16frames.pth",
+        model_url="https://github.com/JingyunLiang/RVRT/releases/download/v0.0/004_RVRT_videodeblurring_DVD_16frames.pth",
         description="Video Deblurring trained on DVD dataset",
     ),
     "005_RVRT_videodeblurring_GoPro_16frames": RVRTConfig(
@@ -127,7 +127,7 @@ TASK_CONFIGS = {
         attention_window=[3, 3],
         cpu_cache_length=128,
         nonblind_denoising=False,
-        model_url="https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/005_RVRT_videodeblurring_GoPro_16frames.pth",
+        model_url="https://github.com/JingyunLiang/RVRT/releases/download/v0.0/005_RVRT_videodeblurring_GoPro_16frames.pth",
         description="Video Deblurring trained on GoPro dataset",
     ),
     # Video Denoising task
@@ -147,7 +147,7 @@ TASK_CONFIGS = {
         attention_window=[3, 3],
         cpu_cache_length=128,
         nonblind_denoising=True,
-        model_url="https://github.com/Lyra-Vhess/vs-rvrt/releases/download/v1.0.0/006_RVRT_videodenoising_DAVIS_16frames.pth",
+        model_url="https://github.com/JingyunLiang/RVRT/releases/download/v0.0/006_RVRT_videodenoising_DAVIS_16frames.pth",
         description="Video Denoising trained on DAVIS (non-blind, sigma 0-50)",
     ),
 }
