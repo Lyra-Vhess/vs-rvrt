@@ -1,7 +1,7 @@
 # Maintainer: Lyra Vhess <auxilliary.email@protonmail.com>
 pkgname=vsrvrt-git
 _pkgname=vs-rvrt
-pkgver=1.1.0.r0.g57a5c5f
+pkgver=1.1.1.r0.8d94249
 pkgrel=1
 pkgdesc="Vapoursynth plugin for RVRT (Recurrent Video Restoration Transformer) video restoration"
 arch=('x86_64')
@@ -34,8 +34,9 @@ pkgver() {
 
 build() {
     cd "$_pkgname"
+    rm -f vsrvrt-*.whl
     _pyver=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-    pip download --no-deps --only-binary=:all: --python-version "${_pyver}" --implementation cp --abi none --platform "manylinux2014_x86_64" vsrvrt || {
+    pip download --no-cache-dir --no-deps --only-binary=:all: --python-version "${_pyver}" --implementation cp --abi none --platform "manylinux2014_x86_64" vsrvrt || {
         echo "ERROR: Pre-built wheel not found on PyPI for Python ${_pyver}"
         return 1
     }
@@ -43,7 +44,7 @@ build() {
 
 package() {
     cd "$_pkgname"
-    pip install --root="$pkgdir" --ignore-installed --no-deps vsrvrt-*.whl
+    pip install --no-cache-dir --root="$pkgdir" --ignore-installed --no-deps vsrvrt-*.whl
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
     install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
 }
