@@ -87,6 +87,18 @@ def get_python_version_id():
     return f"cp{sys.version_info.major}{sys.version_info.minor}"
 
 
+def get_version_number(py_version):
+    """Extract version number from Python version identifier.
+
+    Args:
+        py_version: Python version identifier like 'cp314'
+
+    Returns:
+        Version number string like '314'
+    """
+    return py_version[2:]
+
+
 def check_requirements():
     """Check that all build requirements are met."""
     print("Checking build requirements...")
@@ -191,10 +203,11 @@ def compile_extension():
         verbose=True,
     )
 
+    ver_num = get_version_number(py_version)
     ext_file = (
         build_dir / "deform_attn.pyd"
         if sys.platform == "win32"
-        else build_dir / f"deform_attn.cpython-{py_version}-x86_64-linux-gnu.so"
+        else build_dir / f"deform_attn.cpython-{ver_num}-x86_64-linux-gnu.so"
     )
 
     if not ext_file.exists():
@@ -222,7 +235,10 @@ def copy_binary_to_source(ext_file, platform_id, py_version):
     if sys.platform == "win32":
         dest_file = dest_dir / "deform_attn.pyd"
     else:
-        dest_file = dest_dir / f"deform_attn.cpython-{py_version}-x86_64-linux-gnu.so"
+        dest_file = (
+            dest_dir
+            / f"deform_attn.cpython-{get_version_number(py_version)}-x86_64-linux-gnu.so"
+        )
 
     shutil.copy2(ext_file, dest_file)
     print(f"  Copied to source: {dest_file}")
@@ -255,7 +271,8 @@ def create_staging_directory(platform_id, py_version):
     src_binary_dir = BINARY_DIR / platform_id / py_version
     if src_binary_dir.exists():
         for item in src_binary_dir.iterdir():
-            shutil.copy2(item, staging_binary / item.name)
+            if item.is_file() and item.suffix in (".so", ".pyd", ".py"):
+                shutil.copy2(item, staging_binary / item.name)
 
     staging_binary_init = staging_vsrvrt / "_binary" / "__init__.py"
     staging_binary_init.parent.mkdir(parents=True, exist_ok=True)
