@@ -12,17 +12,18 @@ A Vapoursynth plugin wrapper for RVRT (Recurrent Video Restoration Transformer),
 - **Flexible Chunking**: Control chunk size, overlap, and processing strategy
 - **Automatic Tiling**: VRAM-aware automatic tiling to handle large videos (may not be perfect)
 - **RGBS Format**: Full support for 32-bit float RGB
+- **Pre-built Binaries**: No compilation required for PyPI installs
 
 ## Requirements
 
-- Python >= 3.8
-- Vapoursynth >= 60
-- PyTorch >= 1.9.1
-- CUDA-capable GPU
+- Python 3.12 or 3.13
+- VapourSynth >= 60
+- PyTorch >= 2.10.0 **with CUDA support** (see important note below)
+- NVIDIA GPU with CUDA 12.8+ driver
 
 ## Installation
 
-### PyPI
+### pip
 
 ```bash
 pip install vsrvrt
@@ -34,27 +35,30 @@ pip install vsrvrt
 yay -S vsrvrt-git
 ```
 
-### From Source
+**Important Note:** PyPI's default index only has CPU-only PyTorch. You must install the CUDA version first:
 
 ```bash
-git clone https://github.com/Lyra-Vhess/vs-rvrt/
-cd vs-rvrt
-pip install -e .
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 ```
 
-### Environment Setup
+### Building from Source
 
-Add to your `~/.bashrc` or `~/.zshrc`:
+If you need to build from source (e.g., for development or unsupported platforms):
 
-```bash
-# May be required for CUDA extension compilation
-export CC=gcc
-export CXX=g++
-export CUDA_HOME=/opt/cuda
+1. **Prerequisites:**
+   - CUDA Toolkit 12.8+
+   - C++ compiler (MSVC on Windows, GCC on Linux)
+   - ninja build system
 
-# Prevent stale cache locks
-rm -f ~/.cache/torch_extensions/*/deform_attn/lock 2>/dev/null
-```
+2. **Build:**
+   ```bash
+   git clone https://github.com/Lyra-Vhess/vs-rvrt/
+   cd vs-rvrt
+   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+   pip install ninja
+   python build_wheels.py
+   pip install dist/vsrvrt-*.whl
+   ```
 
 ## Usage
 
@@ -202,38 +206,40 @@ These are the datasets used in training the models, choose the model based on ho
 
 ## Troubleshooting
 
-### Import Hangs / Stuck in Terminal
+### "requires PyTorch with CUDA support, but you have the CPU-only version"
 
-If importing vsrvrt hangs, the CUDA extension may be compiling or a stale cache lock exists:
-
-```bash
-# Clear stale lock files
-rm -f ~/.cache/torch_extensions/*/deform_attn/lock
-```
-
-### CUDA Compilation Errors
-
-If you see errors about `aocc-clang` or compiler issues:
+This means pip installed the CPU-only PyTorch from the default PyPI index. Fix:
 
 ```bash
-# Ensure GCC is used, not AOCC
-export CC=gcc
-export CXX=g++
-export CUDA_HOME=/opt/cuda
+pip uninstall torch torchvision -y
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 ```
+
+### "CUDA is not available" (but you have PyTorch with CUDA)
+
+This usually means:
+1. You don't have an NVIDIA GPU
+2. Your GPU driver is too old
+3. CUDA drivers aren't installed
+
+Update your NVIDIA drivers from https://www.nvidia.com/Download/index.aspx
 
 ## Performance Tips
 
 1. **Use FP16**: Enable for 2x speedup and 50% VRAM reduction
-3. **Preview Mode**: Use `preview_mode=True` in vspreview for instant feedback
-4. **Adjust Tiling**: If you get OOM errors, reduce `tile_size`
-6. **Chunk Size**: Larger chunks = better quality but more VRAM. Default 64 is a good balance.
+2. **Preview Mode**: Use `preview_mode=True` in vspreview for instant feedback
+3. **Adjust Tiling**: If you get OOM errors, reduce `tile_size`
+4. **Chunk Size**: Larger chunks = better quality but more VRAM. Default 64 is a good balance.
 
 ## Project Structure
 
 ```
 vsrvrt/
 ├── __init__.py             # Package initialization
+├── _binary/                # Pre-built CUDA extension binaries
+│   ├── __init__.py         # Binary loader
+│   ├── win_amd64/          # Windows binaries
+│   └── manylinux_x86_64/   # Linux binaries
 ├── model_configs.py        # Model configurations
 ├── rvrt_core.py            # Core inference wrapper
 ├── rvrt_filter.py          # Vapoursynth filter functions
@@ -242,7 +248,7 @@ vsrvrt/
 └── rvrt_src/               # RVRT source code
     ├── models/
     │   ├── network_rvrt.py
-    │   └── op/             # CUDA extensions
+    │   └── op/             # CUDA extension source
     └── utils/
 ```
 
