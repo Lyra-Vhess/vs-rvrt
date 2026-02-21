@@ -63,11 +63,21 @@ SUPPORTED_PYTHON_VERSIONS = ["cp312", "cp313", "cp314"]
 
 
 def get_platform_id():
-    """Get the platform identifier."""
+    """Get the platform identifier for internal directory naming."""
     if sys.platform == "win32":
         return "win_amd64"
     elif sys.platform.startswith("linux"):
         return "manylinux_x86_64"
+    else:
+        raise RuntimeError(f"Unsupported platform: {sys.platform}")
+
+
+def get_wheel_platform_tag():
+    """Get the platform tag for wheel naming (PyPI-compatible)."""
+    if sys.platform == "win32":
+        return "win-amd64"
+    elif sys.platform.startswith("linux"):
+        return "manylinux2014_x86_64"
     else:
         raise RuntimeError(f"Unsupported platform: {sys.platform}")
 
@@ -269,10 +279,7 @@ def build_wheel(platform_id, py_version):
 
     DIST_DIR.mkdir(parents=True, exist_ok=True)
 
-    if sys.platform == "win32":
-        plat_name = "win-amd64"
-    else:
-        plat_name = "manylinux_x86_64"
+    plat_name = get_wheel_platform_tag()
 
     setup_py = PROJECT_ROOT / "setup.py"
     pyproject_toml = PROJECT_ROOT / "pyproject.toml"
