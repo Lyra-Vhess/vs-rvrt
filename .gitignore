@@ -41,3 +41,4 @@ vsrvrt/models/*.pth
 .DS_Store
 Thumbs.db
 AGENTS.md
+vsrvrt-git/
