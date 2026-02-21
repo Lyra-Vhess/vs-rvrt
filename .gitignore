@@ -42,3 +42,7 @@ vsrvrt/models/*.pth
 Thumbs.db
 AGENTS.md
 vsrvrt-git/
+
+# Test files (input video and outputs are large, keep only the script)
+test/*.mkv
+test/*.ffindex
