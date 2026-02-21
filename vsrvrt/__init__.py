@@ -29,32 +29,39 @@ Usage:
 import os
 import sys
 
-__version__ = "1.1.0"
-__author__ = "RVRT Vapoursynth Plugin"
+__version__ = "1.1.1"
+__author__ = "Lyra Vhess"
 
 
 def _add_vapoursynth_dll_path():
     """Add VapourSynth DLL directory to search path on Windows.
-    
+
     Python 3.8+ requires explicit DLL directory registration via
     os.add_dll_directory() for DLLs not in standard system paths.
     """
     if sys.platform != "win32":
         return
-    
+
     # Check if already loaded
     try:
         import vapoursynth
+
         return
     except ImportError:
         pass
-    
+
     vs_paths = [
         os.environ.get("VAPOURSYNTH_PATH"),
-        os.path.join(os.environ.get("ProgramFiles", "C:\\Program Files"), "VapourSynth", "core"),
-        os.path.join(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"), "VapourSynth", "core"),
+        os.path.join(
+            os.environ.get("ProgramFiles", "C:\\Program Files"), "VapourSynth", "core"
+        ),
+        os.path.join(
+            os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"),
+            "VapourSynth",
+            "core",
+        ),
     ]
-    
+
     for vs_path in vs_paths:
         if vs_path and os.path.isdir(vs_path):
             try:
@@ -69,15 +76,15 @@ _add_vapoursynth_dll_path()
 
 def _check_cuda_available():
     """Verify PyTorch has CUDA support at import time.
-    
+
     Provides a clear error message if the user installed the CPU-only
     version of PyTorch instead of the CUDA version.
     """
     import torch
-    
+
     if not torch.cuda.is_available():
-        cuda_version = getattr(torch.version, 'cuda', None)
-        
+        cuda_version = getattr(torch.version, "cuda", None)
+
         if cuda_version is None:
             raise RuntimeError(
                 "vsrvrt requires PyTorch with CUDA support, but you have the CPU-only version installed.\n\n"

@@ -13,7 +13,7 @@ else:
 
 setup(
     name="vsrvrt",
-    version="1.1.0",
+    version="1.1.1",
     author="Lyra Vhess",
     author_email="auxilliary.email@protonmail.com",
     description="Vapoursynth plugin for RVRT video restoration",

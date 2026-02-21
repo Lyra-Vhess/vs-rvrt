@@ -5,6 +5,7 @@ Usage:
     vsrvrt-download
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -13,7 +14,26 @@ from tqdm import tqdm
 
 from .model_configs import TASK_CONFIGS
 
-MODELS_DIR = Path(__file__).parent / "models"
+
+def get_models_dir() -> Path:
+    """Get the user-writable models cache directory."""
+    if sys.platform == "win32":
+        cache_dir = (
+            Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+            / "vsrvrt"
+            / "models"
+        )
+    else:
+        # Linux/macOS: use XDG cache directory
+        cache_dir = (
+            Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+            / "vsrvrt"
+            / "models"
+        )
+    return cache_dir
+
+
+MODELS_DIR = get_models_dir()
 
 MODEL_FILES = [
     ("001_RVRT_videosr_bi_REDS_30frames.pth", "001_RVRT_videosr_bi_REDS_30frames"),

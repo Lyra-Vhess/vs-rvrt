@@ -62,8 +62,23 @@ class RVRTInference:
 
     def _get_model_path(self) -> Path:
         """Get path to model weights, downloading if necessary."""
-        model_dir = Path(__file__).parent / "models"
-        model_dir.mkdir(exist_ok=True)
+        # Use user cache directory for models (writable by all users)
+        if sys.platform == "win32":
+            cache_dir = (
+                Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+                / "vsrvrt"
+                / "models"
+            )
+        else:
+            # Linux/macOS: use XDG cache directory
+            cache_dir = (
+                Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+                / "vsrvrt"
+                / "models"
+            )
+
+        model_dir = cache_dir
+        model_dir.mkdir(parents=True, exist_ok=True)
 
         model_name = f"{self.config.task}.pth"
         model_path = model_dir / model_name
