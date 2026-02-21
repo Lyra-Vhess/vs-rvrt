@@ -49,6 +49,9 @@ Documentation = "https://github.com/Lyra-Vhess/vs-rvrt"
 [project.entry-points."vapoursynth.plugins"]
 vsrvrt = "vsrvrt:register_plugin"
 
+[project.scripts]
+vsrvrt-download = "vsrvrt.download_models:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["vsrvrt*"]
