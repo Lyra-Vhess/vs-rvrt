@@ -1,3 +1,14 @@
-# Include CUDA source files for compilation
+# Include CUDA source files for reference
 global-include *.cpp
 global-include *.cu
+
+# Include pre-built binary extensions
+recursive-include vsrvrt/_binary *.pyd
+recursive-include vsrvrt/_binary *.so
+
+# Include model weights
+recursive-include vsrvrt/models *.pth
+
+# Include README and LICENSE
+include README.md
+include LICENSE

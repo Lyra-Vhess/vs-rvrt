@@ -22,3 +22,22 @@ wheels/
 .venv/
 venv/
 ENV/
+.venv3*/
+
+# Pre-built binaries (added by build_wheels.py, not tracked in git)
+vsrvrt/_binary/**/*.pyd
+vsrvrt/_binary/**/*.so
+
+# Model weights (downloaded at runtime)
+vsrvrt/models/*.pth
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+AGENTS.md

@@ -13,7 +13,7 @@ else:
 
 setup(
     name="vsrvrt",
-    version="1.0.1",
+    version="1.1.0",
     author="Lyra Vhess",
     author_email="auxilliary.email@protonmail.com",
     description="Vapoursynth plugin for RVRT video restoration",
@@ -24,21 +24,20 @@ setup(
     package_data={
         "vsrvrt": ["models/*.pth"],
         "vsrvrt.rvrt_src.models.op": ["*.cpp", "*.cu"],
+        "vsrvrt._binary": ["**/*.pyd", "**/*.so"],
     },
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Topic :: Multimedia :: Video",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.12,<3.15",
     install_requires=[
-        "torch>=1.9.1",
+        "torch>=2.10.0",
         "torchvision",
         "numpy",
         "requests",
