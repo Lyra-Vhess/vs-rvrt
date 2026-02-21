@@ -58,7 +58,6 @@ include = ["vsrvrt*"]
 
 [tool.setuptools.package-data]
 vsrvrt = [
-    "models/*.pth",
     "rvrt_src/models/op/*.cpp",
     "rvrt_src/models/op/*.cu",
     "_binary/**/*.pyd",

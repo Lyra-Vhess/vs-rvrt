@@ -6,8 +6,8 @@ global-include *.cu
 recursive-include vsrvrt/_binary *.pyd
 recursive-include vsrvrt/_binary *.so
 
-# Include model weights
-recursive-include vsrvrt/models *.pth
+# Exclude model weights (downloaded at runtime via vsrvrt-download)
+prune vsrvrt/models
 
 # Include README and LICENSE
 include README.md
