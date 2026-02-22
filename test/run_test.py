@@ -14,14 +14,23 @@ Example:
 import subprocess
 import sys
 import os
+import platform
 
-os.environ.setdefault("VAPOURSYNTH_PLUGIN_PATH", "/usr/lib/vapoursynth")
+if platform.system() == "Linux":
+    os.environ.setdefault("VAPOURSYNTH_PLUGIN_PATH", "/usr/lib/vapoursynth")
 
 import vapoursynth as vs
 from vapoursynth import core
 import vsrvrt
 
 source = "denoise_input.mkv"
+
+if platform.system() == "Windows":
+    local_app_data = os.environ.get("LOCALAPPDATA", "")
+    ffms2_dll = os.path.join(
+        local_app_data, "VapourSynth", "plugins64", "ffms2", "x64", "ffms2.dll"
+    )
+    core.std.LoadPlugin(path=ffms2_dll)
 
 clip = core.ffms2.Source(source=source)
 
