@@ -236,20 +236,23 @@ Update your NVIDIA drivers from https://www.nvidia.com/Download/index.aspx
 ```
 vsrvrt/
 ├── __init__.py             # Package initialization
-├── _binary/                # Pre-built CUDA extension binaries
-│   ├── __init__.py         # Binary loader
-│   ├── win_amd64/          # Windows binaries
-│   └── manylinux_x86_64/   # Linux binaries
+├── download_models.py      # CLI: vsrvrt-download
 ├── model_configs.py        # Model configurations
 ├── rvrt_core.py            # Core inference wrapper
-├── rvrt_filter.py          # Vapoursynth filter functions
-├── models/                 # Downloaded model weights (auto-populated)
+├── rvrt_filter.py          # VapourSynth filter functions
+├── _binary/                # Pre-built CUDA extension binaries
+│   ├── __init__.py         # Platform/version loader
+│   ├── manylinux_x86_64/   # Linux (cp312, cp313, cp314)
+│   └── win_amd64/          # Windows (cp312, cp313)
+├── models/                 # Placeholder (models cached in ~/.cache/vsrvrt/)
 ├── utils/                  # Utility functions
 └── rvrt_src/               # RVRT source code
     ├── models/
     │   ├── network_rvrt.py
     │   └── op/             # CUDA extension source
     └── utils/
+        ├── utils_image.py
+        └── utils_video.py
 ```
 
 ## Citation
