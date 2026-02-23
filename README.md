@@ -16,7 +16,7 @@ A Vapoursynth plugin wrapper for RVRT (Recurrent Video Restoration Transformer),
 
 ## Requirements
 
-- Python 3.12 or 3.13
+- Python >= 3.12 (3.14 not supported on Windows)
 - VapourSynth >= 60
 - PyTorch >= 2.7.1 **with CUDA support** (see important note below)
 - NVIDIA GPU with CUDA 12.8+ driver
