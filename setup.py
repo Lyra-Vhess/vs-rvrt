@@ -13,7 +13,7 @@ else:
 
 setup(
     name="vsrvrt",
-    version="1.1.2",
+    version="1.1.3",
     author="Lyra Vhess",
     author_email="auxilliary.email@protonmail.com",
     description="Vapoursynth plugin for RVRT video restoration",
@@ -37,7 +37,7 @@ setup(
     ],
     python_requires=">=3.12,<3.15",
     install_requires=[
-        "torch>=2.10.0",
+        "torch>=2.7.1",
         "torchvision",
         "numpy",
         "requests",

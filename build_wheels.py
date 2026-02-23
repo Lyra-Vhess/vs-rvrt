@@ -7,7 +7,7 @@ to build all wheels.
 
 Requirements:
     - Python 3.12, 3.13, or 3.14
-    - PyTorch 2.10+ with CUDA 12.8
+    - PyTorch 2.7.1+ with CUDA 12.8
     - CUDA Toolkit 12.8+ (for compilation)
     - C++ compiler (MSVC on Windows, GCC on Linux)
     - ninja build system
@@ -22,12 +22,12 @@ Usage:
         python3.13 build_wheels.py    # Build wheel for Python 3.13
 
 Output:
-    dist/vsrvrt-1.1.0-cp312-none-win_amd64.whl
-    dist/vsrvrt-1.1.0-cp313-none-win_amd64.whl
-    dist/vsrvrt-1.1.0-cp314-none-win_amd64.whl
-    dist/vsrvrt-1.1.0-cp312-none-manylinux_x86_64.whl
-    dist/vsrvrt-1.1.0-cp313-none-manylinux_x86_64.whl
-    dist/vsrvrt-1.1.0-cp314-none-manylinux_x86_64.whl
+    dist/vsrvrt-1.1.3-cp312-none-win_amd64.whl
+    dist/vsrvrt-1.1.3-cp313-none-win_amd64.whl
+    dist/vsrvrt-1.1.3-cp314-none-win_amd64.whl
+    dist/vsrvrt-1.1.3-cp312-none-manylinux_x86_64.whl
+    dist/vsrvrt-1.1.3-cp313-none-manylinux_x86_64.whl
+    dist/vsrvrt-1.1.3-cp314-none-manylinux_x86_64.whl
 
 Why separate wheels?
     - Simpler maintenance: adding a new Python version requires only one build
@@ -127,8 +127,8 @@ def check_requirements():
 
         from packaging.version import Version
 
-        if Version(torch.__version__) < Version("2.10.0"):
-            print(f"WARNING: PyTorch {torch.__version__} is older than 2.10.0.")
+        if Version(torch.__version__) < Version("2.7.1"):
+            print(f"WARNING: PyTorch {torch.__version__} is older than 2.7.1.")
     except ImportError:
         print("ERROR: PyTorch is not installed.")
         print(
