@@ -45,6 +45,7 @@ def flow_warp(
     grid_y, grid_x = torch.meshgrid(
         torch.arange(0, h, dtype=x.dtype, device=x.device),
         torch.arange(0, w, dtype=x.dtype, device=x.device),
+        indexing="xy",
     )
     grid = torch.stack((grid_x, grid_y), 2)  # W(x), H(y), 2
     grid.requires_grad = False
@@ -615,7 +616,7 @@ class WindowAttention(nn.Module):
         coords_h = torch.arange(window_size[1])
         coords_w = torch.arange(window_size[2])
         coords = torch.stack(
-            torch.meshgrid(coords_d, coords_h, coords_w)
+            torch.meshgrid(coords_d, coords_h, coords_w, indexing="ij")
         )  # 3, Wd, Wh, Ww
         coords_flatten = torch.flatten(coords, 1)  # 3, Wd*Wh*Ww
         relative_coords = (
