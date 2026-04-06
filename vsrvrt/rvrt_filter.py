@@ -185,6 +185,7 @@ def _create_filter_wrapper_chunked(
     device: Optional[str],
     chunk_size: int = 64,
     chunk_overlap: int = 16,
+    quiet: bool = False,
 ) -> vs.VideoNode:
     """Create a filter wrapper with chunked CPU streaming for long videos.
 
@@ -221,17 +222,19 @@ def _create_filter_wrapper_chunked(
                 break
             start += stride
 
-    print(f"RVRT: Processing {total_frames} frames in {len(chunks)} chunk(s)")
-    print(f"RVRT: Chunk size={chunk_size}, overlap={chunk_overlap}")
+    if not quiet:
+        print(f"RVRT: Processing {total_frames} frames in {len(chunks)} chunk(s)")
+        print(f"RVRT: Chunk size={chunk_size}, overlap={chunk_overlap}")
 
     # Process all chunks and store results
     processed_chunks = []
 
     for chunk_idx, (start_frame, end_frame) in enumerate(chunks):
         num_frames = end_frame - start_frame
-        print(
-            f"RVRT: Processing chunk {chunk_idx + 1}/{len(chunks)} (frames {start_frame}-{end_frame - 1})"
-        )
+        if not quiet:
+            print(
+                f"RVRT: Processing chunk {chunk_idx + 1}/{len(chunks)} (frames {start_frame}-{end_frame - 1})"
+            )
 
         # Load frames for this chunk
         frames = []
@@ -252,9 +255,10 @@ def _create_filter_wrapper_chunked(
             last_frame = chunk_tensor[:, -1:, :, :, :]
             padding = last_frame.repeat(1, pad_length, 1, 1, 1)
             chunk_tensor = torch.cat([chunk_tensor, padding], dim=1)
-            print(
-                f"RVRT: Padded chunk from {original_num_frames} to {chunk_size} frames"
-            )
+            if not quiet:
+                print(
+                    f"RVRT: Padded chunk from {original_num_frames} to {chunk_size} frames"
+                )
 
         # Process chunk with RVRT
         sigma_normalized = sigma / 255.0 if sigma is not None else None
@@ -284,7 +288,8 @@ def _create_filter_wrapper_chunked(
     else:
         final_output = processed_chunks[0][2]
 
-    print(f"RVRT: Final output shape: {final_output.shape}")
+    if not quiet:
+        print(f"RVRT: Final output shape: {final_output.shape}")
 
     def process_frame(n, f):
         """Extract frame n from the processed output."""
@@ -413,6 +418,7 @@ def _create_filter_wrapper_preview(
     device: Optional[str],
     chunk_size: int = 64,
     chunk_overlap: int = 16,
+    quiet: bool = False,
 ) -> vs.VideoNode:
     """Create a filter wrapper with lazy chunk processing for preview mode.
 
@@ -446,8 +452,9 @@ def _create_filter_wrapper_preview(
                 break
             start += stride
 
-    print(f"RVRT: Preview mode - {total_frames} frames in {len(chunks)} chunk(s)")
-    print(f"RVRT: Chunk size={chunk_size}, processing on-demand")
+    if not quiet:
+        print(f"RVRT: Preview mode - {total_frames} frames in {len(chunks)} chunk(s)")
+        print(f"RVRT: Chunk size={chunk_size}, processing on-demand")
 
     # Chunk cache - persists for the session
     chunk_cache = {}
@@ -475,10 +482,11 @@ def _create_filter_wrapper_preview(
         if chunk_idx not in chunk_cache:
             # Process this chunk on-demand
             num_frames = end_frame - start_frame
-            print(
-                f"RVRT: Processing chunk {chunk_idx + 1}/{len(chunks)} "
-                f"(frames {start_frame}-{end_frame - 1}) for preview"
-            )
+            if not quiet:
+                print(
+                    f"RVRT: Processing chunk {chunk_idx + 1}/{len(chunks)} "
+                    f"(frames {start_frame}-{end_frame - 1}) for preview"
+                )
 
             # Load frames for this chunk
             frames = []
@@ -589,6 +597,7 @@ def _create_filter_wrapper(
     chunk_overlap: int = 16,
     use_chunking: Optional[bool] = None,
     preview_mode: bool = False,
+    quiet: bool = False,
 ) -> vs.VideoNode:
     """Create a filter wrapper that processes with RVRT.
 
@@ -598,6 +607,7 @@ def _create_filter_wrapper(
     Args:
         preview_mode: If True, process chunks on-demand for fast preview
                      (quality trade-off at chunk boundaries)
+        quiet: If True, suppress all progress output
     """
 
     # Initialize inference to check VRAM
@@ -610,7 +620,8 @@ def _create_filter_wrapper(
 
     # Check for preview mode first
     if preview_mode:
-        print(f"RVRT: Using preview mode (lazy chunk processing)")
+        if not quiet:
+            print(f"RVRT: Using preview mode (lazy chunk processing)")
         return _create_filter_wrapper_preview(
             src_clip,
             config,
@@ -621,6 +632,7 @@ def _create_filter_wrapper(
             device,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
+            quiet=quiet,
         )
 
     # Determine if chunked processing should be used
@@ -628,11 +640,13 @@ def _create_filter_wrapper(
     if use_chunking is True:
         # Force chunked processing
         should_use_chunking = True
-        print(f"RVRT: Using chunked processing (user requested)")
+        if not quiet:
+            print(f"RVRT: Using chunked processing (user requested)")
     elif use_chunking is False:
         # Force single-pass processing
         should_use_chunking = False
-        print(f"RVRT: Using single-pass processing (user requested)")
+        if not quiet:
+            print(f"RVRT: Using single-pass processing (user requested)")
     else:
         # Auto-detect based on video length and VRAM
         # Estimate memory needed for full processing
@@ -649,9 +663,10 @@ def _create_filter_wrapper(
             # Use chunked processing if video is very long or VRAM is limited
             if total_frames > 100 or estimated_needed > available * 0.85:
                 should_use_chunking = True
-                print(
-                    f"RVRT: Using chunked processing (video too long for single-pass)"
-                )
+                if not quiet:
+                    print(
+                        f"RVRT: Using chunked processing (video too long for single-pass)"
+                    )
 
     if should_use_chunking:
         return _create_filter_wrapper_chunked(
@@ -664,6 +679,7 @@ def _create_filter_wrapper(
             device,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
+            quiet=quiet,
         )
 
     # Process entire video as a single batch (original behavior)
@@ -674,7 +690,8 @@ def _create_filter_wrapper(
 
     inference = RVRTInference(config, use_fp16=use_fp16, device=device_obj)
 
-    print(f"RVRT: Loading {src_clip.num_frames} frames for processing...")
+    if not quiet:
+        print(f"RVRT: Loading {src_clip.num_frames} frames for processing...")
 
     frames = []
     for n in range(src_clip.num_frames):
@@ -683,10 +700,12 @@ def _create_filter_wrapper(
         frames.append(tensor)
 
     video_tensor = torch.stack(frames, dim=1)
-    print(f"RVRT: Input tensor shape: {video_tensor.shape}")
+    if not quiet:
+        print(f"RVRT: Input tensor shape: {video_tensor.shape}")
 
     sigma_normalized = sigma / 255.0 if sigma is not None else None
-    print(f"RVRT: Processing with sigma={sigma} (normalized={sigma_normalized})")
+    if not quiet:
+        print(f"RVRT: Processing with sigma={sigma} (normalized={sigma_normalized})")
 
     with torch.no_grad():
         output_tensor = inference.inference(
@@ -696,7 +715,8 @@ def _create_filter_wrapper(
             tile_overlap=tile_overlap,
         )
 
-    print(f"RVRT: Output tensor shape: {output_tensor.shape}")
+    if not quiet:
+        print(f"RVRT: Output tensor shape: {output_tensor.shape}")
 
     num_frames = output_tensor.shape[1]
 
@@ -764,6 +784,7 @@ def Denoise(
     chunk_overlap: Optional[int] = None,
     use_chunking: Optional[bool] = None,
     preview_mode: bool = False,
+    quiet: bool = False,
 ) -> vs.VideoNode:
     """RVRT video denoising filter.
 
@@ -778,6 +799,7 @@ def Denoise(
         chunk_overlap: Overlapping frames between chunks. None for default (16).
         use_chunking: Force chunked processing on/off. None for auto-detection.
         preview_mode: If True, use lazy chunk processing for fast preview (default: False)
+        quiet: If True, suppress all progress output (default: False)
     """
     if not isinstance(clip, vs.VideoNode):
         raise vs.Error("Denoise: clip must be a VideoNode")
@@ -806,6 +828,7 @@ def Denoise(
         chunk_overlap=chunk_overlap if chunk_overlap is not None else 16,
         use_chunking=use_chunking,
         preview_mode=preview_mode,
+        quiet=quiet,
     )
 
 
@@ -820,6 +843,7 @@ def Deblur(
     chunk_overlap: Optional[int] = None,
     use_chunking: Optional[bool] = None,
     preview_mode: bool = False,
+    quiet: bool = False,
 ) -> vs.VideoNode:
     """RVRT video deblurring filter.
 
@@ -834,6 +858,7 @@ def Deblur(
         chunk_overlap: Overlapping frames between chunks. None for default (16).
         use_chunking: Force chunked processing on/off. None for auto-detection.
         preview_mode: If True, use lazy chunk processing for fast preview (default: False)
+        quiet: If True, suppress all progress output (default: False)
     """
     if not isinstance(clip, vs.VideoNode):
         raise vs.Error("Deblur: clip must be a VideoNode")
@@ -866,6 +891,7 @@ def Deblur(
         chunk_overlap=chunk_overlap if chunk_overlap is not None else 16,
         use_chunking=use_chunking,
         preview_mode=preview_mode,
+        quiet=quiet,
     )
 
 
@@ -881,6 +907,7 @@ def SuperRes(
     chunk_overlap: Optional[int] = None,
     use_chunking: Optional[bool] = None,
     preview_mode: bool = False,
+    quiet: bool = False,
 ) -> vs.VideoNode:
     """RVRT video super-resolution filter.
 
@@ -896,6 +923,7 @@ def SuperRes(
         chunk_overlap: Overlapping frames between chunks. None for default (16).
         use_chunking: Force chunked processing on/off. None for auto-detection.
         preview_mode: If True, use lazy chunk processing for fast preview (default: False)
+        quiet: If True, suppress all progress output (default: False)
     """
     if not isinstance(clip, vs.VideoNode):
         raise vs.Error("SuperRes: clip must be a VideoNode")
@@ -932,4 +960,5 @@ def SuperRes(
         chunk_overlap=chunk_overlap if chunk_overlap is not None else 16,
         use_chunking=use_chunking,
         preview_mode=preview_mode,
+        quiet=quiet,
     )
